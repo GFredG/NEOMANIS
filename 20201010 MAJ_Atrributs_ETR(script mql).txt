@@ -1,0 +1,58 @@
+#########################################################################################################
+#	Auteur : Guérin										
+#	Date : 10/10/2020										
+#													
+#	Description : Changement de quelques champs de la BDD, sur un type d'objet de l'appli en fonction 
+				  de certains critéres (complete et corrige certaines infos oubliées)
+					
+#											
+#########################################################################################################
+
+#Start Debug
+tcl;
+# source "C:/Program Files (x86)/TclPro1.4/win32-ix86/bin/prodebug.tcl";
+# debugger_init
+# debugger_eval {
+
+mql set context user creator;
+mql start transaction;
+
+#Start Program Code
+
+set fInput	[open "d:/temp/liste_ETR.csv" r]
+set sList	[read $fInput]
+set slList	[split $sList \n]
+foreach sElement $slList {
+
+	set sLine						[split $sElement ";"]
+	set sETRName					[lindex $sLine 1]
+	set sETRID						[lindex $sLine 3]
+	set sETRProject					[lindex $sLine 4]
+	set sETROrganization			[lindex $sLine 5]
+	set sDesignResponsibilityID 	[lindex $sLine 6]
+	set sDesignResponsibilityName 	[lindex $sLine 7]
+
+	set sComment ""
+	
+	if { $sETRProject == "" || $sETRProject == "Default" || $sETRProject == "Migration" } {
+		set sComment "$sComment project"
+		mql mod bus $sETRID project "Automotive Compressor Business";
+	}
+	if { $sETROrganization == "" } {
+		set sComment "$sComment organisation"
+		mql mod bus $sETRID organization "Compressor Benches";
+	}	
+
+	if { $sDesignResponsibilityName != "Testing Group" && $sDesignResponsibilityName != "Compressor Benches" && $sDesignResponsibilityName != "NVH" && $sDesignResponsibilityName != "ES-Dept" } {
+		set sRelID [mql print bus $sETRID select to\[Design Rsponsibility\].id dump]
+		set sComment "$sComment design_responsibility"
+		#mql mod connection $sRelID from 30740.58884.22877.23330;
+	}
+	
+	if { $sComment != "" } {
+		puts "ETR: $sETRName - modification of $sComment"
+	}
+	
+}
+
+mql commit transaction;
